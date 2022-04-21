@@ -1,0 +1,1 @@
+CHECK_ENV_WORKS = False
