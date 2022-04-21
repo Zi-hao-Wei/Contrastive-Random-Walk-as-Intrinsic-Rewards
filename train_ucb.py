@@ -51,7 +51,7 @@ class Agent:
         '''
         return np.argmax(action + 2*np.sqrt(np.log(episode + 0.1)/(self.number_times_action_selected + 0.1)))
 
-    def choose_action(self, state):
+    def choose_action(self, state,t):
 
         exp = np.random.rand()
         if self.epsilon > exp:
@@ -60,9 +60,9 @@ class Agent:
         else:
             state = np.expand_dims(state, axis=0)
             state = from_numpy(state).float().to(self.device)
-            # chosen=self.ucb_exploration(.numpy(),t)
-            # self.number_times_action_selected[chosen]+=1
-            return np.argmax(self.q_eval_model(state).detach().cpu())
+            chosen=self.ucb_exploration(self.q_eval_model(state).detach().cpu().numpy(),t)
+            self.number_times_action_selected[chosen]+=1
+            return chosen
 
     def update_train_model(self):
         self.q_target_model.load_state_dict(self.q_eval_model.state_dict())
@@ -112,7 +112,7 @@ class Agent:
                 action = self.choose_action(state,step)
                 next_state, reward, done, _, = self.env.step(action)
                 episode_reward += reward
-                total_reward = reward
+                total_reward = reward + self.get_intrinsic_reward(np.expand_dims(next_state, 0)).detach().clamp(-1, 1)
                 self.store(state, total_reward, done, action, next_state)
                 dqn_loss, rnd_loss = self.train()
                 if done:

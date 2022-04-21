@@ -1,6 +1,6 @@
 import gym
 import control_flags as flag
-from train import Agent
+from train_crw import Agent
 from play import Play
 import matplotlib.pyplot as plt
 import numpy as np
