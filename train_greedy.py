@@ -38,15 +38,7 @@ class Agent:
         self.q_optimizer = Adam(self.q_eval_model.parameters(), lr=self.lr)
         self.number_times_action_selected = np.zeros(n_actions)
     
-    def ucb_exploration(self,action, episode):
-        '''
-            Function of the UCB exploration system
-            param:
-                action: q-value of the actions
-                episode: episode of training for the function
-            return: q-value of the action with UCB exploration system
-        '''
-        return np.argmax(action + 2*np.sqrt(np.log(episode + 0.1)/(self.number_times_action_selected + 0.1)))
+    
 
     def choose_action(self, state):
 
@@ -57,9 +49,7 @@ class Agent:
         else:
             state = np.expand_dims(state, axis=0)
             state = from_numpy(state).float().to(self.device)
-            # chosen=self.ucb_exploration(.numpy(),t)
-            # self.number_times_action_selected[chosen]+=1
-            return np.argmax(self.q_eval_model(state).detach().cpu())
+            return np.argmax(self.q_eval_model(state).detach().cpu().numpy())
 
     def update_train_model(self):
         self.q_target_model.load_state_dict(self.q_eval_model.state_dict())

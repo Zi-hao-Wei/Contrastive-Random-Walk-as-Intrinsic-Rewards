@@ -41,16 +41,6 @@ class Agent:
         self.feature_optimizer = Adam(self.rnd_predictor_model.parameters(), lr=self.lr / 10)
         self.number_times_action_selected = np.zeros(n_actions)
     
-    def ucb_exploration(self,action, episode):
-        '''
-            Function of the UCB exploration system
-            param:
-                action: q-value of the actions
-                episode: episode of training for the function
-            return: q-value of the action with UCB exploration system
-        '''
-        return np.argmax(action + 2*np.sqrt(np.log(episode + 0.1)/(self.number_times_action_selected + 0.1)))
-
     def choose_action(self, state):
 
         exp = np.random.rand()
@@ -60,9 +50,7 @@ class Agent:
         else:
             state = np.expand_dims(state, axis=0)
             state = from_numpy(state).float().to(self.device)
-            # chosen=self.ucb_exploration(.numpy(),t)
-            # self.number_times_action_selected[chosen]+=1
-            return np.argmax(self.q_eval_model(state).detach().cpu())
+            return np.argmax(self.q_eval_model(state).detach().cpu().numpy())
 
     def update_train_model(self):
         self.q_target_model.load_state_dict(self.q_eval_model.state_dict())
@@ -109,10 +97,10 @@ class Agent:
             state = self.env.reset()
             episode_reward = 0
             for step in range(1, 1 + self.max_steps):
-                action = self.choose_action(state,step)
+                action = self.choose_action(state)
                 next_state, reward, done, _, = self.env.step(action)
                 episode_reward += reward
-                total_reward = reward
+                total_reward = reward + self.get_intrinsic_reward(np.expand_dims(next_state, 0)).detach().clamp(-1, 1)
                 self.store(state, total_reward, done, action, next_state)
                 dqn_loss, rnd_loss = self.train()
                 if done:

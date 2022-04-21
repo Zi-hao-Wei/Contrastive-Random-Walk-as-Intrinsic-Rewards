@@ -112,7 +112,7 @@ class Agent:
                 action = self.choose_action(state,step)
                 next_state, reward, done, _, = self.env.step(action)
                 episode_reward += reward
-                total_reward = reward + self.get_intrinsic_reward(np.expand_dims(next_state, 0)).detach().clamp(-1, 1)
+                total_reward = reward 
                 self.store(state, total_reward, done, action, next_state)
                 dqn_loss, rnd_loss = self.train()
                 if done:
