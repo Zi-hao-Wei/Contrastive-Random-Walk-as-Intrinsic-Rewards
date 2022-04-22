@@ -25,20 +25,16 @@ class Agent:
         self.batch_size = 64
         self.lr = 0.001
         self.gamma = 0.98
-        self.device = device("cpu")
+        self.device = device("cuda")
 
         self.q_target_model = Model(self.n_states, self.n_actions).to(self.device)
         self.q_eval_model = Model(self.n_states, self.n_actions).to(self.device)
         self.q_target_model.load_state_dict(self.q_eval_model.state_dict())
 
-        self.rnd_predictor_model = RNDModel(self.n_states, self.n_encoded_features).to(self.device)
-        self.rnd_target_model = RNDModel(self.n_states, self.n_encoded_features).to(self.device)
-
         self.memory = Memory(self.mem_size)
 
         self.loss_fn = torch.nn.MSELoss()
         self.q_optimizer = Adam(self.q_eval_model.parameters(), lr=self.lr)
-        self.feature_optimizer = Adam(self.rnd_predictor_model.parameters(), lr=self.lr / 10)
         self.number_times_action_selected = np.zeros(n_actions)
     
     def ucb_exploration(self,action, episode):
@@ -75,7 +71,6 @@ class Agent:
 
         x = states
         q_eval = self.q_eval_model(x).gather(dim=1, index=actions.long())
-        i_rewards = self.get_intrinsic_reward(next_states.detach().cpu().numpy())
         with torch.no_grad():
             q_next = self.q_target_model(next_states)
 
@@ -87,19 +82,14 @@ class Agent:
 
             q_target = rewards + self.gamma * target_value
         loss = self.loss_fn(q_eval, q_target.view(self.batch_size, 1))
-        predictor_loss = i_rewards.mean()
 
         self.q_optimizer.zero_grad()
         loss.backward()
         self.q_optimizer.step()
         dqn_loss = loss.detach().cpu().numpy()
 
-        self.feature_optimizer.zero_grad()
-        predictor_loss.backward()
-        self.feature_optimizer.step()
-        rnd_loss = predictor_loss.detach().cpu().numpy()
 
-        return dqn_loss, rnd_loss
+        return dqn_loss
 
     def run(self):
 
@@ -114,7 +104,7 @@ class Agent:
                 episode_reward += reward
                 total_reward = reward 
                 self.store(state, total_reward, done, action, next_state)
-                dqn_loss, rnd_loss = self.train()
+                dqn_loss = self.train()
                 if done:
                     break
                 state = next_state
@@ -132,7 +122,6 @@ class Agent:
             total_global_running_reward.append(global_running_reward)
             print(f"EP:{episode}| "
                     f"DQN_loss:{dqn_loss:.3f}| "
-                    f"RND_loss:{rnd_loss:.6f}| "
                     f"EP_reward:{episode_reward}| "
                     f"EP_running_reward:{global_running_reward:.3f}| "
                     f"Epsilon:{self.epsilon:.2f}| "
@@ -150,13 +139,6 @@ class Agent:
         next_state = from_numpy(next_state).float().to(self.device)
         self.memory.add(state, reward, done, action, next_state)
 
-    def get_intrinsic_reward(self, x):
-        x = from_numpy(x).float().to(self.device)
-        predicted_features = self.rnd_predictor_model(x)
-        target_features = self.rnd_target_model(x).detach()
-
-        intrinsic_reward = (predicted_features - target_features).pow(2).sum(1)
-        return intrinsic_reward
 
     def unpack_batch(self, batch):
 

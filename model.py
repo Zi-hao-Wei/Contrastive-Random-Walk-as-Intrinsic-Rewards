@@ -60,7 +60,7 @@ class CRWModel(nn.Module):
         self.fc1 = nn.Linear(self.n_states, 256)
         self.fc2 = nn.Linear(256, 128)
         self.encoded_features = nn.Linear(128, self.n_outputs)
-        self.dropout=nn.Dropout(0.2)
+        self.dropout=nn.Dropout(0.3)
 
        
     def weight_init(self):

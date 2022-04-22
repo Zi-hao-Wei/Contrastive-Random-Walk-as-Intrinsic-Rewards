@@ -17,7 +17,7 @@ class Agent:
         self.n_states = n_states
         self.n_encoded_features = n_encoded_features
         self.max_steps = 200
-        self.max_episodes = 1000
+        self.max_episodes = 500
         self.target_update_period = 500
         self.mem_size = 100000
         self.env = env
@@ -25,7 +25,7 @@ class Agent:
         self.batch_size = 64
         self.lr = 0.001
         self.gamma = 0.98
-        self.device = device("cpu")
+        self.device = device("cuda")
 
         self.q_target_model = Model(self.n_states, self.n_actions).to(self.device)
         self.q_eval_model = Model(self.n_states, self.n_actions).to(self.device)
@@ -39,7 +39,6 @@ class Agent:
         self.loss_fn = torch.nn.MSELoss()
         self.q_optimizer = Adam(self.q_eval_model.parameters(), lr=self.lr)
         self.feature_optimizer = Adam(self.rnd_predictor_model.parameters(), lr=self.lr / 10)
-        self.number_times_action_selected = np.zeros(n_actions)
     
     def choose_action(self, state):
 

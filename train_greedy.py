@@ -25,7 +25,7 @@ class Agent:
         self.batch_size = 64
         self.lr = 0.001
         self.gamma = 0.98
-        self.device = device("cpu")
+        self.device = device("cuda")
 
         self.q_target_model = Model(self.n_states, self.n_actions).to(self.device)
         self.q_eval_model = Model(self.n_states, self.n_actions).to(self.device)
@@ -90,7 +90,7 @@ class Agent:
             state = self.env.reset()
             episode_reward = 0
             for step in range(1, 1 + self.max_steps):
-                action = self.choose_action(state,step)
+                action = self.choose_action(state)
                 next_state, reward, done, _, = self.env.step(action)
                 episode_reward += reward
                 total_reward = reward

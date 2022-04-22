@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 
 class Agent:
-    def __init__(self, env, n_actions, n_states, n_encoded_features):
+    def __init__(self, env, n_actions, n_states, n_encoded_features,temperature=1,batch_size=128):
 
         self.epsilon = 1.0
         self.min_epsilon = 0.01
@@ -26,11 +26,12 @@ class Agent:
         self.mem_size = 100000
         self.env = env
         self.recording_counter = 0
-        self.batch_size = 128
+        self.batch_size = batch_size
         self.lr = 0.001
         self.gamma = 0.98
         self.device = device("cuda")
         self.running_loss=0
+        self.temperature=temperature
         self.q_target_model = Model(self.n_states, self.n_actions).to(self.device)
         self.q_eval_model = Model(self.n_states, self.n_actions).to(self.device)
         self.q_target_model.load_state_dict(self.q_eval_model.state_dict())
@@ -64,7 +65,7 @@ class Agent:
     def train(self):
         if len(self.memory) < self.batch_size:
             return 0, 0  # as no loss
-        if(self.running_loss<5e-4):
+        if(self.running_loss<5e-3):
             print("Inited")
             self.crw.weight_init()
 
@@ -167,10 +168,10 @@ class Agent:
         s1_features = self.crw(s1)
         s2_features = self.crw(s2)
         B,N = s1_features.shape
-
-        A12 = F.softmax(torch.bmm(s1_features.reshape(B,N,1),s2_features.reshape(B,1,N)),dim=-1)
+        A12 = F.softmax(torch.bmm(s1_features.reshape(B,N,1),s2_features.reshape(B,1,N))/self.temperature,dim=-1)
         # print("A12",A12.shape)
-        var = 1/64 -torch.var(A12.detach().reshape(B,-1),dim=-1,unbiased=False)
+        # var = 1/64 -torch.var(A12.reshape(B,-1),dim=-1,unbiased=False)
+        var=0
         A21 = A12.transpose(dim0=-1,dim1=-2)
         # print("A21",A12.shape)
 
