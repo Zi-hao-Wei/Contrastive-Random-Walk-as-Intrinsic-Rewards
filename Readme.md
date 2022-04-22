@@ -53,7 +53,7 @@ The training process will begin by calling `train.py` using the default hyperpar
 
 ## 4. Ablation Study
 
-Here we shows how each hyperparameter will contributes to the final results of our methods. The hyperparameter tuned including feature dimension of the state encoder, temperature of crw, batch size during training and learning rate. Except the parameter of being tuned, other parameters are set as default.
+Here we show how each hyperparameter will contribute to the final results of our methods in Figure \ref{fig: Ablation}. The hyper-parameter tuned including feature dimension of the state encoder, temperature of crw, batch size during training and learning rate. Except for the parameter of being tuned, other parameters are set as default.
 
 <p align="center">
 <img src="Results/ChangeFeatureSpace.png">
